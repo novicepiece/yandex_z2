@@ -8,13 +8,24 @@ using std::cout;
 using std::cin;
 
 std::ifstream fin("data.txt");
-std::ofstream fout("out.txt");
+std::ofstream fout("results.txt");
 
-std::vector<std::pair<std::string, std::string>> data;
+std::vector< std::pair<std::string, std::string> > data;
 // 3 - type
 // 5 - name
 
-std::string getWord(std::string &str, const char &divider)
+
+// Средние значения количества въездов для каждого вида поселения
+const double city_entry_counter = 8.2; // Город
+const double village_entry_counter = 2.2; // Деревня
+const double farm_entry_counter = 1.6; // Хутор
+const double urban_village_entry_counter = 3.6; // Городской поселок
+const double agro_entry_counter = 3.4; // Агрогородок
+const double township_entry_counter = 3.4; // Поселок
+const double station_entry_counter = 2; // Станция
+const double working_entry_counter = 3.3; // Рабочий поселок
+
+std::string getWord(std::string &str, uint16_t word_number, const char &divider = '\t') // Функция, вырезающее слово из строки
 {
     std::string result = "";
 
@@ -28,36 +39,31 @@ std::string getWord(std::string &str, const char &divider)
     return result;
 }
 
-void initialize()
+void initialize() // Игнорирование вводной строки
 {
     std::string str;
     getline(fin, str);
-
-    while (!str.empty())
-    {
-        getWord(str, '\t');
-    }
 }
 
-void processLine()
+void processLine() // Обработка одной строки с населенным пунктом
 {
     std::string str;
     getline(fin, str);
     size_t i = 0;
-    std::pair<std::string, std::string> pair_in;
+    data.push_back(std::make_pair("%NOTYPE%", "%NONAME%"));
 
     while (!str.empty())
     {
         std::string word = getWord(str, '\t');
 
-        if (i == 3)
+        if (i == 3) // Запись 2его столбика с типом поселения
         {
-            pair_in.first = word;
+            data[data.size() - 1].first = word;
         }
-        else if (i == 5)
+        else if (i == 5) // Запись 4ого столбика с названием поселения на белорусском
         {
-            pair_in.second = word;
-            data.push_back(pair_in);
+            data[data.size() - 1].second = word;
+            break; // Больше нам ничего не надо в этой строке
         }
 
         i++;
@@ -69,36 +75,103 @@ int main()
 {
     setlocale(LC_ALL, "Russian");
 
-    uint64_t result = 0;
+    double result = 0; // Итоговое количество символов
 
     initialize();
 
-    while (!fin.eof())
+    while (!fin.eof()) // Обработка всей базы
     {
         processLine();
     }
 
-    for (size_t i = 0; i < data.size(); i++)
+    data.pop_back(); // Последняя строка пустая
+
+    // Счетчики количества представителей каждого типа населенного пункта
+    uint16_t city_counter = 0;
+    uint16_t village_counter = 0;
+    uint16_t farm_counter = 0;
+    uint16_t urban_village_counter = 0;
+    uint16_t agro_counter = 0;
+    uint16_t township_counter = 0;
+    uint16_t station_counter = 0;
+    uint16_t working_counter = 0;
+
+    for (size_t i = 0; i < data.size(); i++) // Подсчет результата из имеющейся информации
     {
-        uint8_t mult = 1;
+        double entry_counter = 1;
 
-        if (data[i].first == "в.")
+        if (data[i].first == "г.") // Город
         {
-            mult = 2;
+            entry_counter = city_entry_counter;
+            city_counter++;
         }
-        else if (data[i].first == "г.")
+        else if (data[i].first == "в." || data[i].first == "мяст.") // Деревня
         {
-            mult = 7;
+            entry_counter = village_entry_counter;
+            village_counter++;
         }
-        else if (data[i].first == "г. п.")
+        else if (data[i].first == "х.") // Хутор
         {
-            mult = 3;
+            entry_counter = farm_entry_counter;
+            farm_counter++;
+        }
+        else if (data[i].first == "г. п." || data[i].first == "к. п.") // Городской поселок
+        {
+            entry_counter = urban_village_entry_counter;
+            urban_village_counter++;
+        }
+        else if (data[i].first == "аг.") // Агрогородок
+        {
+            entry_counter = agro_entry_counter;
+            agro_counter++;
+        }
+        else if (data[i].first == "п.") // Поселок
+        {
+            entry_counter = township_entry_counter;
+            township_counter++;
+        }
+        else if (data[i].first == "ст." || data[i].first == "рзд" || data[i].first == "раз’езд" ) // Станция
+        {
+            entry_counter = station_entry_counter;
+            station_counter++;
+        }
+        else if (data[i].first == "р. п.") // Рабочий поселок
+        {
+            entry_counter = working_entry_counter;
+            working_counter++;
+        }
+        else
+        {
+            fout << "|" << "UNNKOWN!!! " << data[i].first << "|\n"; // На случай неучтенного типа поселения
         }
 
-        result += (data[i].first.length() + 1 + data[i].second.length()) * mult;
-        fout << data[i].first << ' ' << data[i].second << '\n';
+        uint16_t symbol_counter = data[i].first.length() + 1 + data[i].second.length(); // Сокращение типа города + пробел + название на белорусском
+        result += symbol_counter * entry_counter; // Перемножение символов на кол-во въездов
     }
 
-    cout << result << ' ' << data.size() << '\n';
+
+    // Вывод
+    fout << "There are " << (long)result << " symbols on road entry signs.\n";
+    fout << "There are " << data.size() << " settlements.\n";
+    fout << city_counter << " cities.\n";
+    fout << village_counter << " villages.\n";
+    fout << farm_counter << " farms.\n";
+    fout << urban_village_counter << " urban villages.\n";
+    fout << agro_counter << " agro-towns.\n";
+    fout << township_counter << " townships.\n";
+    fout << station_counter << " stations.\n";
+    fout << working_counter << " working towns.\n";
+
+    cout << "There are " << (long)result << " symbols on road entry signs.\n";
+    cout << "There are " << data.size() << " settlements.\n";
+    cout << city_counter << " cities.\n";
+    cout << village_counter << " villages.\n";
+    cout << farm_counter << " farms.\n";
+    cout << urban_village_counter << " urban villages.\n";
+    cout << agro_counter << " agro-towns.\n";
+    cout << township_counter << " townships.\n";
+    cout << station_counter << " stations.\n";
+    cout << working_counter << " working towns.\n";
+
     return 0;
 }

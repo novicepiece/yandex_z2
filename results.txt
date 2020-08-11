@@ -1,0 +1,10 @@
+There are 1104882 symbols on road entry signs.
+There are 23971 settlements.
+112 cities.
+21531 villages.
+928 farms.
+84 urban villages.
+9 agro-towns.
+1272 townships.
+26 stations.
+9 working towns.
