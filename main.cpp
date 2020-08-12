@@ -36,6 +36,7 @@ std::string getWord(std::string &str, uint16_t word_number, const char &divider 
     }
 
     str.erase(0, i + 1);
+
     return result;
 }
 

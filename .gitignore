@@ -36,3 +36,5 @@ obj/
 *.exe
 *.out
 *.app
+data.txt
+out.txt
